@@ -3,7 +3,7 @@ import Getsy from "getsy";
 
 type GlastoDay = "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
 
-export interface IGlastoSet {
+export interface ISet {
   title: string;
   stage: string;
   startTime: Date | null;
@@ -41,7 +41,7 @@ const timeOfDayToMs = (HHmm: string = ""): number | null => {
   }
 }
 
-const parseRowElement = (row: HTMLElement): IGlastoSet => {
+const parseRowElement = (row: HTMLElement): ISet => {
   const [titleEl, stageEl, dayEl, timesEl] = row.children;
 
   const title = titleEl.textContent!;
@@ -74,12 +74,12 @@ const parseRowElement = (row: HTMLElement): IGlastoSet => {
   }
 }
 
-export const getSets = async (): Promise<IGlastoSet[]> => {
+export const getSets = async (): Promise<ISet[]> => {
   const setsAzUrl = "https://www.glastonburyfestivals.co.uk/line-up/line-up-2019/?artist";
   const page = await Getsy(setsAzUrl, { corsProxy: "https://cors-anywhere.herokuapp.com/" });
   const rows = page.getMe(".lineup .letterList > li");
 
-  const sets: IGlastoSet[] = [];
+  const sets: ISet[] = [];
   for (let i = 0; i < rows.length; i++) {
     sets.push(parseRowElement(rows[i]));
   }
