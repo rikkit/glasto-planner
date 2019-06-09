@@ -14,15 +14,15 @@ const glastoDayToDate = (day: string): Date => {
   day = day.toUpperCase() as GlastoDay;
   switch (day) {
     case "WEDNESDAY":
-      return new Date(2019, 6, 26);
+      return new Date(2019, 5, 26);
     case "THURSDAY":
-      return new Date(2019, 6, 27);
+      return new Date(2019, 5, 27);
     case "FRIDAY":
-      return new Date(2019, 6, 28);
+      return new Date(2019, 5, 28);
     case "SATURDAY":
-      return new Date(2019, 6, 29);
+      return new Date(2019, 5, 29);
     case "SUNDAY":
-      return new Date(2019, 6, 30);
+      return new Date(2019, 5, 30);
     default:
       throw new Error(`Unhandled day ${day}`);
   }
