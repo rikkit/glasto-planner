@@ -1,6 +1,21 @@
+* {
+  box-sizing: border-box;
+}
 
 .App {
+  height: 100vh;
+  overflow: auto;
+
+  .react-tabs__tab-list {
+    position: -webkit-sticky;
+    position: sticky;
+    top: -1px;
+    z-index: 100;
+    background: white;
+  }
+
   .picky__dropdown {
+    position: static;
     max-height: unset !important;
     overflow-y: auto !important;
   }
