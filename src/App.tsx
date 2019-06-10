@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Picky from "react-picky";
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import * as R from "ramda";
+import { compressToEncodedURIComponent as compress, decompressFromEncodedURIComponent as decompress } from "lz-string";
 import { getSets, ISet } from './utils/scraper';
 import { Timeline } from './Timeline';
 
@@ -17,6 +18,18 @@ const App: React.FC = () => {
   const [artistOptions, setArtistOptions] = useState<string[]>([]);
   const [chosenArtists, setChosenArtists] = useState<string[]>([]);
 
+  const onSelectionChange = (selection: string[]) => {
+    selection = selection.filter(x => !!x);
+
+    const params = new URLSearchParams(window.location.search);
+    const value = selection.length ? compress(selection.join(";")) : "";
+    params.set("a", value);
+
+    window.history.pushState("", "", "?" + params.toString());
+    setChosenArtists(selection);
+  }
+
+  // Load set data
   useEffect(() => {
     setLoading(true);
 
@@ -31,6 +44,14 @@ const App: React.FC = () => {
       setLoading(false);
     })();
   }, []);
+
+  // Initialise selection from query string
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const compressed = params.get("a") || "";
+    const choices = (decompress(compressed) || "").split(";");
+    setChosenArtists(choices);
+  }, [])
 
   const chosenSetsByArtist = R.pick(chosenArtists)(allSets);
   const setsForTimeline = R.values(chosenSetsByArtist).flat();
@@ -53,7 +74,7 @@ const App: React.FC = () => {
             includeFilter
             options={artistOptions}
             value={chosenArtists}
-            onChange={selection => setChosenArtists(selection as string[])}
+            onChange={selection => onSelectionChange(selection as string[])}
           />
         </TabPanel>
 
