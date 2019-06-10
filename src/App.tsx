@@ -3,7 +3,8 @@ import Picky from "react-picky";
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import * as R from "ramda";
 import { compressToEncodedURIComponent as compress, decompressFromEncodedURIComponent as decompress } from "lz-string";
-import { getSets, ISet } from './utils/scraper';
+import { getAllSets, ISet } from './utils/scraper';
+import { Share } from './Share';
 import { Timeline } from './Timeline';
 
 import './App.scss';
@@ -11,22 +12,23 @@ import "react-calendar-timeline/lib/Timeline.css";
 import "react-picky/dist/picky.css";
 
 type SetsByArtist = { [artist: string]: ISet[] };
+type ChoicesByFriend = { [name: string]: string[] };
 
 const App: React.FC = () => {
   const [isLoading, setLoading] = useState<boolean>(false);
   const [allSets, setAllSets] = useState<SetsByArtist>({});
   const [artistOptions, setArtistOptions] = useState<string[]>([]);
-  const [chosenArtists, setChosenArtists] = useState<string[]>([]);
+  const [friendArtists, setFriendArtists] = useState<ChoicesByFriend>({});
 
-  const onSelectionChange = (selection: string[]) => {
-    selection = selection.filter(x => !!x);
+  const onSelectionChange = (choices: string[]) => {
+    choices = choices.filter(x => !!x);
 
     const params = new URLSearchParams(window.location.search);
-    const value = selection.length ? compress(selection.join(";")) : "";
+    const value = choices.length ? compress(choices.join(";")) : "";
     params.set("a", value);
-
     window.history.pushState("", "", "?" + params.toString());
-    setChosenArtists(selection);
+
+    setFriendArtists({ ...friendArtists, me: choices });
   }
 
   // Load set data
@@ -34,7 +36,7 @@ const App: React.FC = () => {
     setLoading(true);
 
     (async () => {
-      const sets = await getSets();
+      const sets = await getAllSets();
 
       const groupedByArtists = R.groupBy(set => set.title, R.sortBy(set => set.title, sets));
       const options = Object.keys(groupedByArtists);
@@ -50,11 +52,11 @@ const App: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const compressed = params.get("a") || "";
     const choices = (decompress(compressed) || "").split(";");
-    setChosenArtists(choices);
-  }, [])
+    setFriendArtists({ ...friendArtists, me: choices });
+  }, []);
 
-  const chosenSetsByArtist = R.pick(chosenArtists)(allSets);
-  const setsForTimeline = R.values(chosenSetsByArtist).flat();
+  const getSets = (artists: string[]) => R.values(R.pick(artists)(allSets)).flat();
+  const setsByFriend = R.mapObjIndexed(getSets, friendArtists);
 
   return (
     <div className="App">
@@ -64,6 +66,7 @@ const App: React.FC = () => {
         <TabList>
           <Tab>Artists</Tab>
           <Tab>Timeline</Tab>
+          <Tab>Share</Tab>
         </TabList>
 
         <TabPanel>
@@ -73,13 +76,20 @@ const App: React.FC = () => {
             multiple
             includeFilter
             options={artistOptions}
-            value={chosenArtists}
+            value={friendArtists.me || []}
             onChange={selection => onSelectionChange(selection as string[])}
           />
         </TabPanel>
 
         <TabPanel>
-          <Timeline sets={setsForTimeline} />
+          <Timeline setsByFriend={setsByFriend} />
+        </TabPanel>
+
+        <TabPanel>
+          <Share addUser={(name, code) => {
+            const choices = (decompress(code) || "").split(";");
+            setFriendArtists({ ...friendArtists, [name]: choices });
+          }} />
         </TabPanel>
       </Tabs>
     </div>

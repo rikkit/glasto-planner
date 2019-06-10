@@ -1,4 +1,5 @@
 
+import * as R from "ramda";
 import React, { useState, useEffect } from 'react';
 import RCTimeline, { TimelineItem, TimelineGroup } from "react-calendar-timeline";
 import moment from "moment";
@@ -6,46 +7,64 @@ import { ISet } from './utils/scraper';
 
 import "react-tabs/style/react-tabs.css";
 
-interface Props {
-  sets: ISet[]
+interface SetTimelineItem extends TimelineItem {
+  itemProps: {
+    friends: string[];
+  };
 }
 
-export const Timeline = ({ sets }: Props) => {
-  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
+interface Props {
+  setsByFriend: { [name: string]: ISet[] };
+}
+
+export const Timeline = ({ setsByFriend }: Props) => {
+  const [timelineItems, setTimelineItems] = useState<SetTimelineItem[]>([]);
   const [timelineGroups, setTimelineGroups] = useState<TimelineGroup[]>([]);
 
   useEffect(() => {
     (async () => {
-      let counter = 0;
-      let items: TimelineItem[] = [];
+      let items: { [id: string]: SetTimelineItem } = {};
       let groups: TimelineGroup[] = [];
-      for (const set of sets) {
-        if (!set.startTime || !set.endTime) {
-          continue;
-        }
+      for (const friend of Object.keys(setsByFriend)) {
+        for (const set of setsByFriend[friend]) {
+          if (!set.startTime || !set.endTime) {
+            continue;
+          }
 
-        let groupId = groups.findIndex(g => g.title === set.stage);
-        if (groupId < 0) {
-          groupId = groups.length + 1;
-          groups.push({
-            id: groupId,
-            title: set.stage,
-          })
-        }
+          let groupId = groups.findIndex(g => g.title === set.stage);
+          if (groupId < 0) {
+            groupId = groups.length + 1;
+            groups.push({
+              id: groupId,
+              title: set.stage,
+            })
+          }
 
-        items.push({
-          id: ++counter,
-          title: set.title,
-          group: groupId,
-          start_time: set.startTime.valueOf(),
-          end_time: set.endTime.valueOf(),
-        });
+          const itemId = parseInt(`${groupId}${set.startTime.valueOf()}`); // 🤔
+
+          const match = items[itemId];
+          if (match) {
+            match.itemProps.friends = [ ...match.itemProps.friends, friend ];
+          }
+          else {
+            items[itemId] = {
+              id: itemId,
+              title: set.title,
+              group: groupId,
+              start_time: set.startTime.valueOf(),
+              end_time: set.endTime.valueOf(),
+              itemProps: {
+                friends: [friend],
+              }
+            };
+          }
+        }
       }
 
-      setTimelineItems(items);
+      setTimelineItems(R.values(items));
       setTimelineGroups(groups);
     })();
-  }, []);
+  }, [ setsByFriend ]);
 
   return (
     <RCTimeline

@@ -74,7 +74,7 @@ const parseRowElement = (row: HTMLElement): ISet => {
   }
 }
 
-export const getSets = async (): Promise<ISet[]> => {
+export const getAllSets = async (): Promise<ISet[]> => {
   const setsAzUrl = "https://www.glastonburyfestivals.co.uk/line-up/line-up-2019/?artist";
   const page = await Getsy(setsAzUrl, { corsProxy: "https://cors-anywhere.herokuapp.com/" });
   const rows = page.getMe(".lineup .letterList > li");
