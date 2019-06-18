@@ -54,8 +54,8 @@ const parseRowElement = (row: HTMLElement): ISet => {
     const setStartTs = timeOfDayToMs(setStart);
     let startTime: Date | null = null;
     let endTime: Date | null = null;
-    if (setStartTs != null) {
-      const startTimeTs = glastoDayToDate(dayEl.textContent!).valueOf() + setStartTs;
+    if (setStartTs != null && dayEl.textContent) {
+      const startTimeTs = glastoDayToDate(dayEl.textContent).valueOf() + setStartTs;
       startTime = new Date(startTimeTs);
 
       const setEndTs = timeOfDayToMs(setEnd);
