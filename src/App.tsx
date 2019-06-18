@@ -3,6 +3,8 @@ import Picky from "react-picky";
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import * as R from "ramda";
 import { compressToEncodedURIComponent as compress, decompressFromEncodedURIComponent as decompress } from "lz-string";
+import { format } from "date-fns";
+
 import { getAllSets, ISet } from './utils/scraper';
 import { Share } from './Share';
 import { Timeline } from './Timeline';
@@ -11,14 +13,13 @@ import './App.scss';
 import "react-calendar-timeline/lib/Timeline.css";
 import "react-picky/dist/picky.css";
 
-type SetsByArtist = { [artist: string]: ISet[] };
-type ChoicesByFriend = { [name: string]: string[] };
+const formatDate = (date: Date | null): string => date ? format(date, "ddd HH:mm") : "TBA";
 
 const App: React.FC = () => {
   const [isLoading, setLoading] = useState<boolean>(false);
-  const [allSets, setAllSets] = useState<SetsByArtist>({});
+  const [allSets, setAllSets] = useState<Record<string, ISet[]>>({});
   const [artistOptions, setArtistOptions] = useState<string[]>([]);
-  const [friendArtists, setFriendArtists] = useState<ChoicesByFriend>({});
+  const [friendArtists, setFriendArtists] = useState<Record<string, string[]>>({});
 
   const onSelectionChange = (choices: string[]) => {
     choices = choices.filter(x => !!x);
@@ -51,25 +52,40 @@ const App: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const compressed = params.get("a") || "";
-    const choices = (decompress(compressed) || "").split(";");
+    const choices = (decompress(compressed) || "").split(";").filter(x => !!x);
     setFriendArtists({ ...friendArtists, me: choices });
   }, []);
 
-  const getSets = (artists: string[]) => R.values(R.pick(artists)(allSets)).flat();
-  const setsByFriend = R.mapObjIndexed(getSets, friendArtists);
+  // const getSets = (artists: string[]) => R.values(R.pick(artists)(allSets)).flat();
+  // const setsByFriend = R.mapObjIndexed(getSets, friendArtists);
+
+  interface ISetInfo extends ISet {
+    setNumber: number;
+    totalSetCount: number;
+    friends: string[];
+  }
+
+  const artistsAndFriends = (artists: string[], friend: string) => artists.map(artist => ({ artist, friend }));
+  const coolArtists = R.values(R.mapObjIndexed(artistsAndFriends, friendArtists)).flat();
+  const friendsByArtist = R.reduceBy((acc, { friend }) => acc.concat(friend), [] as string[], x => x.artist, coolArtists);
+  const setsByArtist = R.mapObjIndexed((friends, artist) => {
+    const setsForArtist = allSets[artist] || [];
+    return setsForArtist.map((set, setNumber) => ({
+      ...set,
+      setNumber: setNumber + 1,
+      totalSetCount: setsForArtist.length,
+      friends,
+    } as ISetInfo))
+  }, friendsByArtist);
+
+  const setsByTime = R.sortBy(x => x.startTime ? x.startTime.valueOf() : -1, R.values(setsByArtist).flat());
 
   return (
     <div className="App">
       {isLoading && "Loading..."}
 
-      <Tabs defaultIndex={0}>
-        <TabList>
-          <Tab>Artists</Tab>
-          <Tab>Timeline</Tab>
-          <Tab>Share</Tab>
-        </TabList>
-
-        <TabPanel>
+      <div className="columns">
+        <div className="column is-half-tablet is-full-mobile">
           <Picky
             open
             keepOpen
@@ -79,11 +95,25 @@ const App: React.FC = () => {
             value={friendArtists.me || []}
             onChange={selection => onSelectionChange(selection as string[])}
           />
-        </TabPanel>
+        </div>
 
-        <TabPanel>
-          <Timeline setsByFriend={setsByFriend} />
-        </TabPanel>
+        <div className="column is-half-tablet is-full-mobile">
+          {setsByTime.map((set, i) => (
+            <div key={i}>
+              <h3>{set.title}</h3>
+              <p>{formatDate(set.startTime)} - {formatDate(set.endTime)}</p>
+              <p>{set.stage}</p>
+              <p>{set.friends.join(", ")}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Tabs defaultIndex={0}>
+        <TabList>
+          <Tab>Artists</Tab>
+          <Tab>Share</Tab>
+        </TabList>
 
         <TabPanel>
           <Share addUser={(name, code) => {
