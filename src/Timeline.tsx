@@ -5,8 +5,6 @@ import RCTimeline, { TimelineItem, TimelineGroup } from "react-calendar-timeline
 import moment from "moment";
 import { ISet } from './utils/scraper';
 
-import "react-tabs/style/react-tabs.css";
-
 interface SetTimelineItem extends TimelineItem {
   itemProps: {
     friends: string[];

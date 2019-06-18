@@ -3,7 +3,7 @@ import Picky from "react-picky";
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import * as R from "ramda";
 import { compressToEncodedURIComponent as compress, decompressFromEncodedURIComponent as decompress } from "lz-string";
-import { format } from "date-fns";
+import { format, getDate, subDays, differenceInDays, addDays } from "date-fns";
 
 import { getAllSets, ISet } from './utils/scraper';
 import { Share } from './Share';
@@ -79,11 +79,23 @@ const App: React.FC = () => {
   }, friendsByArtist);
 
   const setsByTime = R.sortBy(x => x.startTime ? x.startTime.valueOf() : -1, R.values(setsByArtist).flat());
+  const setsByDay = R.groupBy(({ startTime }) => {
+    // Number of full days between day 0 (Weds 26th @ 5am)
+    const zero = new Date(2019, 5, 26, 5, 0);
+    return (startTime
+      ? format(addDays(zero, differenceInDays(startTime, zero)), "ddd")
+      : "TBA");
+  }, setsByTime)
 
   return (
     <div className="App">
       {isLoading && "Loading..."}
 
+
+      <Share addUser={(name, code) => {
+        const choices = (decompress(code) || "").split(";");
+        setFriendArtists({ ...friendArtists, [name]: choices });
+      }} />
       <div className="columns">
         <div className="column is-half-tablet is-full-mobile">
           <Picky
@@ -98,30 +110,29 @@ const App: React.FC = () => {
         </div>
 
         <div className="column is-half-tablet is-full-mobile">
-          {setsByTime.map((set, i) => (
-            <div key={i}>
-              <h3>{set.title}</h3>
-              <p>{formatDate(set.startTime)} - {formatDate(set.endTime)}</p>
-              <p>{set.stage}</p>
-              <p>{set.friends.join(", ")}</p>
-            </div>
-          ))}
+          <Tabs defaultIndex={0} forceRenderTabPanel>
+            <TabList>
+              {Object.keys(setsByDay).map(day => <Tab key={`tab-${day}`}>{day}</Tab>)}
+            </TabList>
+
+            {Object.keys(setsByDay).map(day => {
+              const sets = setsByDay[day];
+              return (
+                <TabPanel key={`sets-${day}`}>
+                  {sets.map((set, i) => (
+                    <div key={i}>
+                      <h3>{set.title} ({set.setNumber}/{set.totalSetCount})</h3>
+                      <p>{formatDate(set.startTime)} - {formatDate(set.endTime)}</p>
+                      <p>{set.stage}</p>
+                      <p>{set.friends.join(", ")}</p>
+                    </div>
+                  ))}
+                </TabPanel>
+              );
+            })}
+          </Tabs>
         </div>
       </div>
-
-      <Tabs defaultIndex={0}>
-        <TabList>
-          <Tab>Artists</Tab>
-          <Tab>Share</Tab>
-        </TabList>
-
-        <TabPanel>
-          <Share addUser={(name, code) => {
-            const choices = (decompress(code) || "").split(";");
-            setFriendArtists({ ...friendArtists, [name]: choices });
-          }} />
-        </TabPanel>
-      </Tabs>
     </div>
   );
 }
