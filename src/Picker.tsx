@@ -9,7 +9,7 @@ interface OwnProps {
 
 export const Picker = (props: OwnProps) => {
   return (
-    <div>
+    <div className="picker">
       <Picky
         open
         keepOpen

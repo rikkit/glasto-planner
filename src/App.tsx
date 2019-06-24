@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as R from "ramda";
-import { Share } from './Share';
+import { AddFriend } from './AddFriend';
 import { ISet } from '../data/scraper';
 import { getSets, decodeShare, encodeShare } from './utils';
 import { Planner } from './Planner';
@@ -11,9 +11,10 @@ import "react-picky/dist/picky.css";
 import { Picker } from './Picker';
 
 const App: React.FC = () => {
-  const [isLoading, setLoading] = useState<boolean>(false);
+  const [isLoading, setLoading] = useState<boolean>(true);
   const [myName, setMyName] = useState<string>("me");
   const [mySelection, setMySelection] = useState<string[]>([]);
+  const [myCode, setMyCode] = useState<string>("");
   const [allSets, setAllSets] = useState<ISet[]>([]);
   const [artistOptions, setArtistOptions] = useState<string[]>([]);
   const [friendArtists, setFriendArtists] = useState<Record<string, number[]>>({});
@@ -38,7 +39,7 @@ const App: React.FC = () => {
     const me = decodeShare(new URLSearchParams(window.location.search).get("a") || "");
     setFriendArtists({ ...friendArtists, [me.name]: me.ids });
   }, []);
-  
+
   // Update qs when name or sets change
   useEffect(() => {
     const choices = mySelection.filter(x => !!x);
@@ -46,6 +47,7 @@ const App: React.FC = () => {
     const setIds = sets.map(x => x.id);
 
     const encoded = encodeShare(myName, setIds);
+    setMyCode(encoded);
 
     const params = new URLSearchParams(window.location.search);
     params.set("a", encoded);
@@ -58,15 +60,40 @@ const App: React.FC = () => {
   const chosenArtists = R.uniq(chosenSets.map(x => x.title));
 
   return (
-    <div className="App">
-      {isLoading && "Loading..."}
+    <div className="planner">
+      {isLoading &&
+        <div className="planner__loading">
+          <div>Loading...</div>
+        </div>
+      }
 
-      <input type="text" value={myName} onChange={e => setMyName(e.currentTarget.value)} />
+      <div className="columns planner__share is-marginless">
+        <div className="field field-my-name column">
+          <label>What's yer name?</label>
+          <div>
+            <input
+              type="text"
+              value={myName}
+              onChange={e => setMyName(e.currentTarget.value)}
+            />
+          </div>
+        </div>
 
-      <Share addUser={(code) => {
-        const choices = decodeShare(code);
-        setFriendArtists({ ...friendArtists, [choices.name]: choices.ids });
-      }} />
+        <div className="field field-my-name column">
+          <label>Your share code</label>
+          <div>
+            <input type="text" value={myCode} />
+          </div>
+        </div>
+
+        <AddFriend
+          className="column"
+          addUser={(code) => {
+            const choices = decodeShare(code);
+            setFriendArtists({ ...friendArtists, [choices.name]: choices.ids });
+          }}
+        />
+      </div>
 
       <div className="columns">
         <div className="column is-half-tablet is-full-mobile">

@@ -2,9 +2,18 @@
   box-sizing: border-box;
 }
 
-.App {
+body, html {
+  font-size: 15px;
+
+  --grey: #efefef;
+}
+
+.planner {
   height: 100vh;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
 
   .react-tabs__tab-list {
     position: -webkit-sticky;
@@ -14,6 +23,36 @@
     background: white;
   }
 
+  &__loading {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    background-color: white;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3em;
+  }
+
+  &__share {
+    background-color: var(--grey);
+    padding: 1em;
+
+    input {
+      display: block;
+      width: 100%;
+    }
+  }
+}
+
+.add-friend {
+  &__inputs {
+    text-align: right;
+  }
+}
+
+.picker {
   .picky__dropdown {
     position: static;
     max-height: unset !important;
