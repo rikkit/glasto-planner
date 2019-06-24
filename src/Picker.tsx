@@ -14,7 +14,7 @@ export const Picker = ({ sets, value, onChange }: OwnProps) => {
 
   const selectedStages = currentStages.filter(x => !!x);
   const stages = R.sortBy(x => x, R.uniq(sets.map(s => s.stage)));
-  const stageSets = sets.filter(set => R.contains(set.stage, selectedStages));
+  const stageSets = sets.filter(set => !selectedStages.length || R.contains(set.stage, selectedStages));
   const artists = R.sortBy(x => x, R.uniq(stageSets.map(set => set.title)));
 
   return (
