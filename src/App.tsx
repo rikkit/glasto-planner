@@ -1,35 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Picky from "react-picky";
-import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import * as R from "ramda";
-import { compressToEncodedURIComponent as compress, decompressFromEncodedURIComponent as decompress } from "lz-string";
-import { format, differenceInDays, addDays } from "date-fns";
 import { Share } from './Share';
 import { ISet } from '../data/scraper';
+import { getSets, decodeShare, encodeShare } from './utils';
+import { Planner } from './Planner';
 
 import './App.scss';
 import "react-calendar-timeline/lib/Timeline.css";
 import "react-picky/dist/picky.css";
-import { getSets } from './utils';
-
-const formatDate = (date: Date | null): string => date ? format(date, "ddd HH:mm") : "TBA";
 
 const App: React.FC = () => {
   const [isLoading, setLoading] = useState<boolean>(false);
-  const [allSets, setAllSets] = useState<Record<string, ISet[]>>({});
+  const [myName, setMyName] = useState<string>("me");
+  const [mySelection, setMySelection] = useState<string[]>([]);
+  const [allSets, setAllSets] = useState<ISet[]>([]);
   const [artistOptions, setArtistOptions] = useState<string[]>([]);
-  const [friendArtists, setFriendArtists] = useState<Record<string, string[]>>({});
-
-  const onSelectionChange = (choices: string[]) => {
-    choices = choices.filter(x => !!x);
-
-    const params = new URLSearchParams(window.location.search);
-    const value = choices.length ? compress(choices.join(";")) : "";
-    params.set("a", value);
-    window.history.pushState("", "", "?" + params.toString());
-
-    setFriendArtists({ ...friendArtists, me: choices });
-  }
+  const [friendArtists, setFriendArtists] = useState<Record<string, number[]>>({});
 
   // Load set data
   useEffect(() => {
@@ -38,63 +25,49 @@ const App: React.FC = () => {
     (async () => {
       const sets = await getSets();
 
-      const groupedByArtists = R.groupBy(set => set.title, R.sortBy(set => set.title, sets));
-      const options = Object.keys(groupedByArtists);
+      const artists = R.sortBy(x => x, R.uniq(sets.map(s => s.title)));
 
-      setAllSets(groupedByArtists);
-      setArtistOptions(options);
+      setAllSets(sets);
+      setArtistOptions(artists);
       setLoading(false);
     })();
   }, []);
 
   // Initialise selection from query string
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const compressed = params.get("a") || "";
-    const choices = (decompress(compressed) || "").split(";").filter(x => !!x);
-    setFriendArtists({ ...friendArtists, me: choices });
+    const me = decodeShare(new URLSearchParams(window.location.search).get("a") || "");
+    setFriendArtists({ ...friendArtists, [me.name]: me.ids });
   }, []);
+  
+  // Update qs when name or sets change
+  useEffect(() => {
+    const choices = mySelection.filter(x => !!x);
+    const sets = R.innerJoin((set, artist) => set.title == artist, Object.values(allSets).flat(), choices);
+    const setIds = sets.map(x => x.id);
 
-  // const getSets = (artists: string[]) => R.values(R.pick(artists)(allSets)).flat();
-  // const setsByFriend = R.mapObjIndexed(getSets, friendArtists);
+    const encoded = encodeShare(myName, setIds);
 
-  interface ISetInfo extends ISet {
-    setNumber: number;
-    totalSetCount: number;
-    friends: string[];
-  }
+    const params = new URLSearchParams(window.location.search);
+    params.set("a", encoded);
+    window.history.pushState("", "", "?" + params.toString());
 
-  const artistsAndFriends = (artists: string[], friend: string) => artists.map(artist => ({ artist, friend }));
-  const coolArtists = R.values(R.mapObjIndexed(artistsAndFriends, friendArtists)).flat();
-  const friendsByArtist = R.reduceBy((acc, { friend }) => acc.concat(friend), [] as string[], x => x.artist, coolArtists);
-  const setsByArtist = R.mapObjIndexed((friends, artist) => {
-    const setsForArtist = allSets[artist] || [];
-    return setsForArtist.map((set, setNumber) => ({
-      ...set,
-      setNumber: setNumber + 1,
-      totalSetCount: setsForArtist.length,
-      friends,
-    } as ISetInfo))
-  }, friendsByArtist);
+    setFriendArtists({ ...friendArtists, me: setIds });
+  }, [mySelection, myName]);
 
-  const setsByTime = R.sortBy(x => x.startTime ? x.startTime.valueOf() : -1, R.values(setsByArtist).flat());
-  const setsByDay = R.groupBy(({ startTime }) => {
-    // Number of full days between day 0 (Weds 26th @ 5am)
-    const zero = new Date(2019, 5, 26, 5, 0);
-    return (startTime
-      ? format(addDays(zero, differenceInDays(startTime, zero)), "ddd")
-      : "TBA");
-  }, setsByTime)
+  const chosenSets = R.innerJoin((set, id) => set.id == id, Object.values(allSets).flat(), friendArtists.me || []);
+  const chosenArtists = R.uniq(chosenSets.map(x => x.title));
 
   return (
     <div className="App">
       {isLoading && "Loading..."}
 
+      <input type="text" value={myName} onChange={e => setMyName(e.currentTarget.value)} />
 
-      <Share addUser={(name, code) => {
-        const choices = (decompress(code) || "").split(";");
-        setFriendArtists({ ...friendArtists, [name]: choices });
+      <Share addUser={(code) => {
+        const choices = decodeShare(code);
+        setFriendArtists({ ...friendArtists, [choices.name]: choices.ids });
       }} />
+
       <div className="columns">
         <div className="column is-half-tablet is-full-mobile">
           <Picky
@@ -103,33 +76,13 @@ const App: React.FC = () => {
             multiple
             includeFilter
             options={artistOptions}
-            value={friendArtists.me || []}
-            onChange={selection => onSelectionChange(selection as string[])}
+            value={chosenArtists || []}
+            onChange={selection => setMySelection(selection as string[])}
           />
         </div>
 
         <div className="column is-half-tablet is-full-mobile">
-          <Tabs defaultIndex={0} forceRenderTabPanel>
-            <TabList>
-              {Object.keys(setsByDay).map(day => <Tab key={`tab-${day}`}>{day}</Tab>)}
-            </TabList>
-
-            {Object.keys(setsByDay).map(day => {
-              const sets = setsByDay[day];
-              return (
-                <TabPanel key={`sets-${day}`}>
-                  {sets.map((set, i) => (
-                    <div key={i}>
-                      <h3>{set.title} ({set.setNumber}/{set.totalSetCount})</h3>
-                      <p>{formatDate(set.startTime)} - {formatDate(set.endTime)}</p>
-                      <p>{set.stage}</p>
-                      <p>{set.friends.join(", ")}</p>
-                    </div>
-                  ))}
-                </TabPanel>
-              );
-            })}
-          </Tabs>
+          <Planner sets={allSets} choices={friendArtists} />
         </div>
       </div>
     </div>
