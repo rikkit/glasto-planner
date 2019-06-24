@@ -3,15 +3,14 @@ import Picky from "react-picky";
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import * as R from "ramda";
 import { compressToEncodedURIComponent as compress, decompressFromEncodedURIComponent as decompress } from "lz-string";
-import { format, getDate, subDays, differenceInDays, addDays } from "date-fns";
-
-import { getAllSets, ISet } from './utils/scraper';
+import { format, differenceInDays, addDays } from "date-fns";
 import { Share } from './Share';
-import { Timeline } from './Timeline';
+import { ISet } from '../data/scraper';
 
 import './App.scss';
 import "react-calendar-timeline/lib/Timeline.css";
 import "react-picky/dist/picky.css";
+import { getSets } from './utils';
 
 const formatDate = (date: Date | null): string => date ? format(date, "ddd HH:mm") : "TBA";
 
@@ -37,7 +36,7 @@ const App: React.FC = () => {
     setLoading(true);
 
     (async () => {
-      const sets = await getAllSets();
+      const sets = await getSets();
 
       const groupedByArtists = R.groupBy(set => set.title, R.sortBy(set => set.title, sets));
       const options = Object.keys(groupedByArtists);

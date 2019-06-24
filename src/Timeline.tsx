@@ -3,7 +3,7 @@ import * as R from "ramda";
 import React, { useState, useEffect } from 'react';
 import RCTimeline, { TimelineItem, TimelineGroup } from "react-calendar-timeline";
 import moment from "moment";
-import { ISet } from './utils/scraper';
+import { ISet } from "../data/scraper";
 
 interface SetTimelineItem extends TimelineItem {
   itemProps: {

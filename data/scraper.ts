@@ -1,9 +1,11 @@
 
-import Getsy from "getsy";
+import Cheerio from "cheerio";
+import fetch from "node-fetch";
 
 type GlastoDay = "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
 
 export interface ISet {
+  id: number;
   title: string;
   stage: string;
   startTime: Date | null;
@@ -41,21 +43,22 @@ const timeOfDayToMs = (HHmm: string = ""): number | null => {
   }
 }
 
-const parseRowElement = (row: HTMLElement): ISet => {
+const parseRowElement = (row: CheerioElement): ISet => {  
   const [titleEl, stageEl, dayEl, timesEl] = row.children;
 
-  const title = titleEl.textContent!;
-  const stage = stageEl.textContent!;
+  const title = Cheerio(titleEl).text();
+  const stage = Cheerio(stageEl).text();
 
-  const matches = timesEl.textContent!.match(/(\d\d:\d\d)/g);
+  const matches = Cheerio(timesEl).text().match(/(\d\d:\d\d)/g);
   if (matches) {
     const [setStart, setEnd] = matches;
 
+    const day = Cheerio(dayEl).text();
     const setStartTs = timeOfDayToMs(setStart);
     let startTime: Date | null = null;
     let endTime: Date | null = null;
-    if (setStartTs != null && dayEl.textContent) {
-      const startTimeTs = glastoDayToDate(dayEl.textContent).valueOf() + setStartTs;
+    if (setStartTs != null && !!day) {
+      const startTimeTs = glastoDayToDate(day).valueOf() + setStartTs;
       startTime = new Date(startTimeTs);
 
       const setEndTs = timeOfDayToMs(setEnd);
@@ -67,17 +70,20 @@ const parseRowElement = (row: HTMLElement): ISet => {
       }
     }
 
-    return { title, stage, startTime, endTime };
+    return { title, stage, startTime, endTime } as ISet;
   }
   else {
-    return { title, stage, startTime: null, endTime: null };
+    return { title, stage, startTime: null, endTime: null } as ISet;
   }
 }
 
 export const getAllSets = async (): Promise<ISet[]> => {
   const setsAzUrl = "https://www.glastonburyfestivals.co.uk/line-up/line-up-2019/?artist";
-  const page = await Getsy(setsAzUrl, { corsProxy: "https://cors-anywhere.herokuapp.com/" });
-  const rows = page.getMe(".lineup .letterList > li");
+
+
+  const response = await fetch(setsAzUrl);
+  const $ = Cheerio.load(await response.text());
+  const rows = $(".lineup .letterList > li");
 
   const sets: ISet[] = [];
   for (let i = 0; i < rows.length; i++) {
@@ -89,3 +95,4 @@ export const getAllSets = async (): Promise<ISet[]> => {
     : -1
   );
 }
+
