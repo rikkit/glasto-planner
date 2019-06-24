@@ -19,7 +19,7 @@ export const Picker = ({ sets, value, onChange }: OwnProps) => {
 
   return (
     <div className="picker">
-      <h3>Stages</h3>
+      <h3>Stages <a onClick={() => setStage([])}>✖</a></h3>
       <Picky
         className="picker__stages"
         multiple
