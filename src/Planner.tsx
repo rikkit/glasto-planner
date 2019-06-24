@@ -34,26 +34,29 @@ export const Planner = ({ choices, sets }: OwnProps) => {
   }, setsByTime)
 
   return (
-    <Tabs defaultIndex={0} forceRenderTabPanel>
-      <TabList>
-        {Object.keys(setsByDay).map(day => <Tab key={`tab-${day}`}>{day}</Tab>)}
-      </TabList>
+    <div className="schedule">
+      <h3>Schedule</h3>
+      <Tabs defaultIndex={0} forceRenderTabPanel>
+        <TabList>
+          {Object.keys(setsByDay).map(day => <Tab key={`tab-${day}`}>{day}</Tab>)}
+        </TabList>
 
-      {Object.keys(setsByDay).map(day => {
-        const sets = setsByDay[day];
-        return (
-          <TabPanel key={`sets-${day}`}>
-            {sets.map((set, i) => (
-              <div key={i}>
-                <h3>{set.title} ({set.setNumber}/{set.totalSetCount})</h3>
-                <p>{formatDate(set.startTime)} - {formatDate(set.endTime)}</p>
-                <p>{set.stage}</p>
-                <p>{set.friends.join(", ")}</p>
-              </div>
-            ))}
-          </TabPanel>
-        );
-      })}
-    </Tabs>
+        {Object.keys(setsByDay).map(day => {
+          const sets = setsByDay[day];
+          return (
+            <TabPanel key={`sets-${day}`}>
+              {sets.map((set, i) => (
+                <div key={i}>
+                  <h3>{set.title} ({set.setNumber}/{set.totalSetCount})</h3>
+                  <p>{formatDate(set.startTime)} - {formatDate(set.endTime)}</p>
+                  <p>{set.stage}</p>
+                  <p>{set.friends.join(", ")}</p>
+                </div>
+              ))}
+            </TabPanel>
+          );
+        })}
+      </Tabs>
+    </div>
   )
 }

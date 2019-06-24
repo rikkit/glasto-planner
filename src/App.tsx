@@ -16,7 +16,6 @@ const App: React.FC = () => {
   const [mySelection, setMySelection] = useState<string[]>([]);
   const [myCode, setMyCode] = useState<string>("");
   const [allSets, setAllSets] = useState<ISet[]>([]);
-  const [artistOptions, setArtistOptions] = useState<string[]>([]);
   const [friendArtists, setFriendArtists] = useState<Record<string, number[]>>({});
 
   // Load set data
@@ -26,10 +25,7 @@ const App: React.FC = () => {
     (async () => {
       const sets = await getSets();
 
-      const artists = R.sortBy(x => x, R.uniq(sets.map(s => s.title)));
-
       setAllSets(sets);
-      setArtistOptions(artists);
       setLoading(false);
     })();
   }, []);
@@ -98,7 +94,7 @@ const App: React.FC = () => {
       <div className="columns">
         <div className="column is-half-tablet is-full-mobile">
           <Picker
-            options={artistOptions}
+            sets={allSets}
             value={chosenArtists || []}
             onChange={selection => setMySelection(selection as string[])}
           />
