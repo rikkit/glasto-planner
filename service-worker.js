@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/glasto-planner/precache-manifest.dfc1b8f0ba9cea994757ec616eb68ab9.js"
+  "/glasto-planner/precache-manifest.b6ffd89467493686b783046daa0c336c.js"
 );
 
 self.addEventListener('message', (event) => {
