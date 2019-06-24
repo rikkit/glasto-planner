@@ -19,10 +19,22 @@ const formatDate = (date: Date | null): string => date ? format(date, "ddd HH:mm
 
 export const Planner = ({ choices, sets }: OwnProps) => {
 
+  // Such efficiency
   const friendsAndSets = Object.values(R.mapObjIndexed((setIds, friend) => setIds.map(id => ({ id, friend })), choices)).flat();
   const friendsAndSetsBySetId = R.groupBy(x => x.id.toString(), friendsAndSets);
   const friendsBySetId = R.mapObjIndexed(fas => fas.map(x => x.friend), friendsAndSetsBySetId);
-  const allSets = R.mapObjIndexed((friends, id) => ({ ...sets.find(x => x.id == parseInt(id)), friends }), friendsBySetId)
+  const setsByArtist = R.groupBy(x => x.title, sets);
+  const allSets = R.mapObjIndexed((friends, id) => {
+    const set = sets.find(x => x.id == parseInt(id))!;
+    const setGroup = setsByArtist[set.title];
+
+    return {
+      ...set,
+      setNumber: setGroup.findIndex(x => x.id == set.id) + 1,
+      totalSetCount: setGroup.length,
+      friends,
+    } as ISetInfo;
+  }, friendsBySetId);
 
   const setsByTime = R.sortBy(x => x.startTime ? x.startTime.valueOf() : -1, R.values(allSets).flat());
   const setsByDay = R.groupBy(({ startTime }) => {
