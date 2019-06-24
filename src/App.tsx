@@ -4,11 +4,11 @@ import { AddFriend } from './AddFriend';
 import { ISet } from '../data/scraper';
 import { getSets, decodeShare, encodeShare } from './utils';
 import { Planner } from './Planner';
+import { Picker } from './Picker';
 
 import './App.scss';
 import "react-calendar-timeline/lib/Timeline.css";
 import "react-picky/dist/picky.css";
-import { Picker } from './Picker';
 
 const App: React.FC = () => {
   const [isLoading, setLoading] = useState<boolean>(true);
