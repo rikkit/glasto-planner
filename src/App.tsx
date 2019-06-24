@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Picky from "react-picky";
 import * as R from "ramda";
 import { Share } from './Share';
 import { ISet } from '../data/scraper';
@@ -9,6 +8,7 @@ import { Planner } from './Planner';
 import './App.scss';
 import "react-calendar-timeline/lib/Timeline.css";
 import "react-picky/dist/picky.css";
+import { Picker } from './Picker';
 
 const App: React.FC = () => {
   const [isLoading, setLoading] = useState<boolean>(false);
@@ -70,11 +70,7 @@ const App: React.FC = () => {
 
       <div className="columns">
         <div className="column is-half-tablet is-full-mobile">
-          <Picky
-            open
-            keepOpen
-            multiple
-            includeFilter
+          <Picker
             options={artistOptions}
             value={chosenArtists || []}
             onChange={selection => setMySelection(selection as string[])}
