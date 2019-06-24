@@ -1,6 +1,7 @@
 {
   "name": "glasto-planner",
   "version": "0.1.0",
+  "homepage": "https://rikkit.github.io/glasto-planner/",
   "private": true,
   "scripts": {
     "start": "react-scripts start",
@@ -8,7 +9,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "build-scraper": "tsc -p ./data/tsconfig.json",
-    "scraper-watch": "nodemon -w ./data/index.js ./data/index.js"
+    "scraper-watch": "nodemon -w ./data/index.js ./data/index.js",
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -37,6 +40,7 @@
     "@types/react-calendar-timeline": "^0.16.1",
     "@types/react-dom": "16.8.4",
     "@types/react-tabs": "2.3.1",
+    "gh-pages": "^2.0.1",
     "nodemon": "^1.19.1"
   },
   "dependencies": {
